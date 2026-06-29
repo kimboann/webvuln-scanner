@@ -18,6 +18,8 @@
       name: 'innerHTML / outerHTML 사용',
       severity: 'HIGH',
       cwe: 'CWE-79',
+      kisa_code: 'W-02',
+      kisa_name: 'Cross-Site Scripting (XSS)',
       category: 'XSS',
       type: 'js_pattern',
       patterns: [

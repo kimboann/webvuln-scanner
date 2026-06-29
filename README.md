@@ -1,83 +1,44 @@
 # WebVuln Scanner
 
-현재 접속한 웹페이지의 코드를 정적 분석해서 취약점을 찾아주는 Chrome 확장 프로그램.
+현재 접속한 웹페이지의 코드를 정적 분석하여 주요 보안 취약점을 탐지하는 Chrome 확장 프로그램.
 
-서버 없이 동작하고, 모든 분석은 브라우저 안에서만 이루어집니다.
-
----
-
-## 탐지 항목 (26종)
-
-**XSS**
-- `innerHTML` / `outerHTML` 직접 할당
-- `document.write()` 사용
-- `javascript:` URI 스킴
-- `postMessage` origin 미검증
-- 인라인 이벤트 핸들러 (`onclick`, `onerror` 등)
-- React `dangerouslySetInnerHTML` 사용
-- JSONP 사용
-
-**Code Injection**
-- `eval()` / `new Function()` 사용
-- `setTimeout` / `setInterval`에 문자열 전달
-
-**Sensitive Data Exposure**
-- 하드코딩된 API Key / Password / Token (AWS, Stripe 등 포함)
-- `localStorage` / `sessionStorage`에 민감 정보 저장
-- URL 쿼리 파라미터에 민감 정보 노출
-
-**Cryptography**
-- 취약한 암호화 알고리즘 (MD5, SHA-1, RC4, DES)
-- `Math.random()` 보안 목적 사용
-
-**Transport Security**
-- 혼합 콘텐츠 (HTTPS 페이지의 HTTP 리소스)
-- 암호화되지 않은 WebSocket (`ws://`)
-- HTTP로 폼 데이터 전송
-
-**Session Security**
-- JS에서 접근 가능한 쿠키 (HttpOnly 미설정)
-
-**Security Headers**
-- Content Security Policy (CSP) 누락
-- 클릭재킹 방어 헤더 누락 (X-Frame-Options / frame-ancestors)
-
-**Supply Chain**
-- 외부 스크립트/스타일시트 SRI(Subresource Integrity) 누락
-
-**Iframe Security**
-- `iframe` sandbox 속성 누락
-
-**CORS**
-- `Access-Control-Allow-Origin: *` 와일드카드 설정
-
-**Prototype Pollution**
-- `__proto__`, `constructor.prototype` 조작 패턴
-
-**Open Redirect**
-- 검증 없는 URL 리다이렉트
-
-**Information Disclosure**
-- `debugger` 문 잔류 / 민감 정보 `console.log`
-
-정적 분석 기반이라 외부 JS 파일 내부나 난독화된 코드는 탐지하지 못합니다.
+서버 없이 동작하며, 모든 분석은 사용자의 브라우저 로컬 안에서만 안전하게 이루어집니다.
 
 ---
 
-## 설치
+## 📋 주요정보통신기반시설 기술적 취약점 평가기준 매핑 (Web Application 보안)
 
-1. `chrome://extensions/` 접속
-2. 개발자 모드 ON
-3. "압축해제된 확장 프로그램을 로드합니다" → 이 폴더 선택
+본 도구는 KISA의 **주요정보통신기반시설 기술적 취약점 분석·평가방법 상세가이드 (Web Application 보안 부문)**의 18대 항목들과 매핑되어 있습니다.
+
+| 번호 | KISA 공식 취약점 구분 | 매핑 탐지 규칙 |
+| :---: | :--- | :--- |
+| **1** | 코드 인젝션 (Code Injection) | `JS_EVAL`, `JS_SETTIMEOUT_STRING`, `JS_PROTO_POLLUTION` |
+| **4** | 에러 페이지 적용 미흡 | `DEBUG_CODE` (디버그 에러 스택 트레이스 노출 방지) |
+| **5** | 정보 누출 (Information Disclosure) | `JS_HARDCODED_SECRET` (자격 증명 노출), `SENSITIVE_COMMENT` (주석 내 키 노출), `INFO_DISCLOSURE_COMMENT` (내부 경로/SQL 노출) |
+| **6** | 크로스사이트 스크립팅 (XSS) | `JS_INNER_HTML`, `JS_DOM_SOURCE_TO_SINK`, `JS_DOCUMENT_WRITE`, `JS_JAVASCRIPT_URI`, `DOM_JAVASCRIPT_HREF`, `DOM_INLINE_EVENT`, `REACT_DANGEROUS_HTML`, `JSONP_USAGE`, `TEMPLATE_INJECTION`, `JS_OPEN_REDIRECT` |
+| **11** | 불충분한 권한 검증 | `SENSITIVE_STORAGE` (로컬 스토리지 내 중요 세션/권한 데이터 적재) |
+| **12** | 취약한 비밀번호 복구 절차 | `INSECURE_RANDOM` (보안 난수 생성 시 `Math.random()` 오용) |
+| **13** | 프로세스 검증 누락 | `CORS_WILDCARD` (CORS 무제한 와일드카드 개방) |
+| **15** | 파일 다운로드 | `SENSITIVE_IN_URL` (파라미터 변조를 통한 중요 경로 유실) |
+| **16** | 불충분한 세션 관리 | `COOKIE_INSECURE` (HttpOnly 누락), `COOKIE_JS_SET` (스크립트 쿠키 생성) |
+| **17** | 데이터 평문 전송 | `MIXED_CONTENT`, `WEBSOCKET_INSECURE`, `FORM_HTTP_ACTION` |
+| **18** | 쿠키 변조 | `COOKIE_JS_SET` (클라이언트 단 서명되지 않은 쿠키 변조 가능성) |
+| **기타** | WEB-STD (웹 보안 표준 설정) | `WEAK_CRYPTO`, `MISSING_CSP`, `CSP_UNSAFE`, `SRI_MISSING`, `IFRAME_NO_SANDBOX`, `IFRAME_OVERPERMISSIVE_SANDBOX`, `MISSING_CLICKJACKING_PROTECTION` |
 
 ---
 
-## 사용법
+## 🚀 설치 방법
 
-분석할 페이지에서 확장 아이콘 클릭 → 스캔 시작 → 결과 확인
+1. Chrome 브라우저에서 **`chrome://extensions/`** 주소로 이동합니다.
+2. 우측 상단의 **개발자 모드** 토글을 켭니다.
+3. 좌측 상단의 **"압축해제된 확장 프로그램을 로드합니다"** 버튼을 누릅니다.
+4. 이 확장 프로그램이 들어있는 루트 폴더를 선택합니다.
 
 ---
 
-## 기술 스택
+## 🎯 사용 방법
 
-Chrome Extension Manifest V3 / Vanilla JS / 외부 의존성 없음
+1. 점검 대상 웹페이지에 접속합니다.
+2. 브라우저 우측 상단 확장 프로그램 바에서 **WebVuln Scanner** 아이콘을 클릭합니다.
+3. **스캔 시작** 버튼을 누르면 동적으로 삽입된 스크립트 및 외부 JS 파일 소스 코드까지 비동기 로딩하여 실시간 정적 분석을 진행합니다.
+4. 발견된 취약점 리스트를 확인하고, 상세 모달을 열어 취약 코드의 발생 라인 및 추천 조치 방안을 조회합니다.

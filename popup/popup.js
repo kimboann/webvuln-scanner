@@ -13,6 +13,12 @@ const KISA_MAPPING = {
   JS_SETTIMEOUT_STRING: { code: '1. 코드 인젝션', name: 'Code Injection' },
   JS_PROTO_POLLUTION: { code: '1. 코드 인젝션', name: 'Code Injection (Prototype Pollution)' },
 
+  // 2. SQL 인젝션
+  SQL_INJECTION_JS: { code: '2. SQL 인젝션', name: 'SQL Injection (Client-side Query)' },
+
+  // 3. 디렉터리 인덱싱
+  DIRECTORY_INDEXING_JS: { code: '3. 디렉터리 인덱싱', name: 'Directory Indexing (Backup Path exposed)' },
+
   // 4. 에러 페이지 적용 미흡
   // (디버그 코드나 스택 트레이스 노출 방지 연계)
   DEBUG_CODE: { code: '4. 에러 페이지 적용 미흡', name: 'Error Page Misconfiguration' },
@@ -21,6 +27,8 @@ const KISA_MAPPING = {
   JS_HARDCODED_SECRET: { code: '5. 정보 누출', name: 'Information Disclosure (Secrets)' },
   SENSITIVE_COMMENT: { code: '5. 정보 누출', name: 'Information Disclosure (Sensitive Comments)' },
   INFO_DISCLOSURE_COMMENT: { code: '5. 정보 누출', name: 'Information Disclosure (Internal Path)' },
+  SENSITIVE_IP_PORT_IN_CODE: { code: '5. 정보 누출', name: 'Information Disclosure (Private IP/Port)' },
+  EXPOSED_API_ENDPOINTS: { code: '5. 정보 누출', name: 'Information Disclosure (API Endpoints)' },
 
   // 6. 크로스사이트 스크립팅 (XSS)
   JS_INNER_HTML: { code: '6. 크로스사이트 스크립팅', name: 'Cross-Site Scripting (XSS)' },
@@ -33,6 +41,19 @@ const KISA_MAPPING = {
   JSONP_USAGE: { code: '6. 크로스사이트 스크립팅', name: 'Cross-Site Scripting (JSONP)' },
   TEMPLATE_INJECTION: { code: '6. 크로스사이트 스크립팅', name: 'Cross-Site Scripting (Template Injection)' },
   JS_OPEN_REDIRECT: { code: '6. 크로스사이트 스크립팅', name: 'Cross-Site Scripting (Redirect XSS)' },
+  DEPRECATED_UNSAFE_DOM_API: { code: '6. 크로스사이트 스크립팅', name: 'Cross-Site Scripting (Unsafe Legacy DOM API)' },
+
+  // 7. 크로스사이트 요청 위조 (CSRF)
+  CSRF_PROTECTION_MISSING: { code: '7. 크로스사이트 요청 위조', name: 'Cross-Site Request Forgery (Token Missing)' },
+
+  // 8. SSRF (Server Side Request Forgery)
+  SSRF_DANGEROUS_REQUEST: { code: '8. SSRF', name: 'Server Side Request Forgery (SSRF)' },
+
+  // 9. 약한 비밀번호 정책
+  WEAK_PASSWORD_REGEX: { code: '9. 약한 비밀번호 정책', name: 'Weak Password Policy (Weak Regex)' },
+
+  // 10. 불충분한 인증 절차
+  INSUFFICIENT_AUTHENTICATION_JS: { code: '10. 불충분한 인증 절차', name: 'Insufficient Authentication (Client Logic)' },
 
   // 11. 불충분한 권한 검증
   SENSITIVE_STORAGE: { code: '11. 불충분한 권한 검증', name: 'Insufficient Authorization (Local Storage)' },
@@ -49,11 +70,13 @@ const KISA_MAPPING = {
   // 16. 불충분한 세션 관리
   COOKIE_INSECURE: { code: '16. 불충분한 세션 관리', name: 'Insufficient Session Management (HttpOnly Missing)' },
   COOKIE_JS_SET: { code: '16. 불충분한 세션 관리', name: 'Insufficient Session Management (JS Cookie Set)' },
+  LOCALSTORAGE_TOKEN_LEAK: { code: '16. 불충분한 세션 관리', name: 'Insufficient Session Management (Token Leak via XSS)' },
 
   // 17. 데이터 평문 전송
   MIXED_CONTENT: { code: '17. 데이터 평문 전송', name: 'Plaintext Transmission (Mixed Content)' },
   WEBSOCKET_INSECURE: { code: '17. 데이터 평문 전송', name: 'Plaintext Transmission (Insecure WebSocket)' },
   FORM_HTTP_ACTION: { code: '17. 데이터 평문 전송', name: 'Plaintext Transmission (HTTP Form)' },
+  THIRD_PARTY_SENSITIVE_CALL: { code: '17. 데이터 평문 전송', name: 'Plaintext Transmission (Unsafe HTTP outbound)' },
 
   // 18. 쿠키 변조
   // (서명되지 않은 JS 쿠키 변조 및 위조)
@@ -75,7 +98,8 @@ const KISA_MAPPING = {
   SRI_MISSING: { code: 'WEB-STD', name: '서브리소스 무결성(SRI) 누락' },
   IFRAME_NO_SANDBOX: { code: 'WEB-STD', name: 'Iframe 보안 설정 미흡' },
   IFRAME_OVERPERMISSIVE_SANDBOX: { code: 'WEB-STD', name: 'Iframe 보안 설정 미흡' },
-  MISSING_CLICKJACKING_PROTECTION: { code: 'WEB-STD', name: '클릭재킹 방어 미흡' }
+  MISSING_CLICKJACKING_PROTECTION: { code: 'WEB-STD', name: '클릭재킹 방어 미흡' },
+  KNOWN_VULNERABLE_LIBRARY: { code: 'WEB-STD', name: '구버전 오픈소스 라이브러리 사용' }
 };
 
 // ── DOM 참조 ──────────────────────────────────────

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>WebVuln Scanner - 소스 코드 뷰어</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --text: #f8fafc;
+      --primary: #38bdf8;
+      --border: #334155;
+      --highlight: rgba(249, 115, 22, 0.35); /* 탐지 라인 하이라이트 */
+      --line-num-color: #64748b;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Consolas', 'Fira Code', Monaco, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    header {
+      padding: 12px 20px;
+      background-color: #1e293b;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .file-path {
+      font-weight: bold;
+      color: var(--primary);
+      word-break: break-all;
+      margin-right: 15px;
+    }
+    .line-info {
+      background-color: #0284c7;
+      color: white;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .code-container {
+      display: flex;
+      padding: 10px 0;
+      overflow-x: auto;
+    }
+    .line-numbers {
+      text-align: right;
+      padding: 0 12px 0 20px;
+      color: var(--line-num-color);
+      user-select: none;
+      border-right: 1px solid var(--border);
+      background-color: var(--bg);
+    }
+    .code-lines {
+      padding: 0 20px;
+      flex-grow: 1;
+      white-space: pre;
+    }
+    .code-line {
+      display: block;
+      min-height: 19.5px;
+    }
+    .code-line.highlight {
+      background-color: var(--highlight);
+      border-left: 3px solid #f97316;
+      margin-left: -23px;
+      padding-left: 20px;
+    }
+    .loading-spinner {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: calc(100vh - 50px);
+      font-size: 16px;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="file-path" id="file-path">로딩 중...</span>
+    <span class="line-info" id="line-info">Line --</span>
+  </header>
+  
+  <div class="loading-spinner" id="loading">소스를 다운로드하여 분석 위치를 추적하고 있습니다...</div>
+  
+  <div class="code-container hidden" id="code-container" style="display: none;">
+    <div class="line-numbers" id="line-numbers"></div>
+    <div class="code-lines" id="code-lines"></div>
+  </div>
+
+  <script src="viewer.js"></script>
+</body>
+</html>

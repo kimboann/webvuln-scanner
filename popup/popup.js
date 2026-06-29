@@ -363,12 +363,19 @@ function openModal(item) {
         <div class="finding-snippet" style="font-family: monospace; background: var(--bg-muted); padding: 6px; border-radius: 4px; font-size: 11px; margin-top: 4px; overflow-x: auto; white-space: pre;">${escapeHtml(f.snippet || f.attribute || '(정보 없음)')}</div>
       `;
 
-      // 클릭 시 해당 소스코드 위치로 뷰소스이동 링크 바인딩
+      // 클릭 시 해당 소스코드 위치로 뷰어/뷰소스 이동 링크 바인딩
       if (isClickable && targetUrl) {
         const linkEl = item.querySelector('.finding-source');
         linkEl.addEventListener('click', () => {
-          const finalUrl = f.line ? `${targetUrl}#${f.line}` : targetUrl;
-          chrome.tabs.create({ url: `view-source:${finalUrl}` });
+          if (rawSource.startsWith('external-script')) {
+            // 외부 파일은 CORS 우회 기능이 장착된 확장 전용 뷰어 탭으로 연결
+            const viewerUrl = chrome.runtime.getURL(`popup/viewer.html?url=${encodeURIComponent(targetUrl)}${f.line ? `&line=${f.line}` : ''}`);
+            chrome.tabs.create({ url: viewerUrl });
+          } else {
+            // 인라인 스크립트 등은 페이지 view-source로 연동
+            const finalUrl = f.line ? `${targetUrl}#${f.line}` : targetUrl;
+            chrome.tabs.create({ url: `view-source:${finalUrl}` });
+          }
         });
       }
 

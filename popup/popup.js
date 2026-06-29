@@ -313,10 +313,65 @@ function openModal(item) {
     findings.forEach((f) => {
       const item = document.createElement('div');
       item.className = 'finding-item';
+      
+      // 리소스 형태 분석 및 이쁘게 파싱
+      let rawSource = f.source || 'DOM';
+      let cleanSource = rawSource;
+      let targetUrl = '';
+      let isClickable = false;
+
+      if (rawSource.startsWith('external-script:') || rawSource.startsWith('external-script-body:') || rawSource.startsWith('external-script-url:')) {
+        const urlMatch = rawSource.match(/https?:\/\/[^\s]+/i);
+        if (urlMatch) {
+          targetUrl = urlMatch[0];
+          try {
+            const urlObj = new URL(targetUrl);
+            const pathParts = urlObj.pathname.split('/');
+            const fileName = pathParts[pathParts.length - 1] || 'external-script';
+            cleanSource = `[외부 파일] ${fileName} (${urlObj.hostname})`;
+            isClickable = true;
+          } catch (_) {
+            cleanSource = `[외부 파일] ${targetUrl}`;
+          }
+        }
+      } else if (rawSource.startsWith('inline-script')) {
+        cleanSource = `[인라인 스크립트] ${rawSource.replace('inline-script', '')}`;
+        targetUrl = scanData?.pageUrl || '';
+        isClickable = !!targetUrl;
+      } else if (rawSource === 'inline-event-handlers') {
+        cleanSource = '[인라인 이벤트 핸들러]';
+        targetUrl = scanData?.pageUrl || '';
+        isClickable = !!targetUrl;
+      } else if (rawSource.startsWith('meta[')) {
+        cleanSource = `[메타 헤더 설정] ${rawSource.replace('meta[', '').replace(']', '')}`;
+      } else {
+        cleanSource = `[${rawSource}]`;
+      }
+
+      const lineSuffix = f.line ? ` · Line ${f.line}` : '';
+      
       item.innerHTML = `
-        <div class="finding-source">${escapeHtml(f.source || 'DOM')}${f.line ? ` · Line ${f.line}` : ''}</div>
-        <div class="finding-snippet">${escapeHtml(f.snippet || f.attribute || '(정보 없음)')}</div>
+        <div class="finding-source ${isClickable ? 'clickable-link' : ''}" 
+             style="${isClickable ? 'color: var(--primary); text-decoration: underline; cursor: pointer;' : ''}"
+             title="${escapeHtml(targetUrl || '클릭하여 소스 위치로 이동')}">
+          ${escapeHtml(cleanSource)}${lineSuffix}
+          ${isClickable ? `
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="margin-left: 3px; vertical-align: middle;">
+            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>` : ''}
+        </div>
+        <div class="finding-snippet" style="font-family: monospace; background: var(--bg-muted); padding: 6px; border-radius: 4px; font-size: 11px; margin-top: 4px; overflow-x: auto; white-space: pre;">${escapeHtml(f.snippet || f.attribute || '(정보 없음)')}</div>
       `;
+
+      // 클릭 시 해당 소스코드 위치로 뷰소스이동 링크 바인딩
+      if (isClickable && targetUrl) {
+        const linkEl = item.querySelector('.finding-source');
+        linkEl.addEventListener('click', () => {
+          const finalUrl = f.line ? `${targetUrl}#${f.line}` : targetUrl;
+          chrome.tabs.create({ url: `view-source:${finalUrl}` });
+        });
+      }
+
       findingsContainer.appendChild(item);
     });
     $('modal-findings-section').classList.remove('hidden');

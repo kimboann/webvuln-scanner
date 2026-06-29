@@ -1081,7 +1081,7 @@
   }
 
   // ─── 인라인/외부 스크립트 소스 수집 ──────────────
-  function collectScriptSources() {
+  async function collectScriptSources() {
     const sources = [];
 
     // 인라인 <script> 태그 (핵심 분석 대상)
@@ -1092,11 +1092,47 @@
       }
     });
 
-    // 외부 스크립트 URL 자체 (src 패턴 탐지)
-    document.querySelectorAll('script[src]').forEach(tag => {
+    // 외부 스크립트 URL 및 본문 수집
+    const externalScripts = Array.from(document.querySelectorAll('script[src]'));
+    for (const tag of externalScripts) {
       const src = tag.getAttribute('src') || '';
-      sources.push({ code: src, source: `external-script: ${src}` });
-    });
+      // 스크립트의 절대 경로 생성
+      let absoluteUrl = src;
+      try {
+        absoluteUrl = new URL(src, location.href).href;
+      } catch (_) {}
+
+      // 외부 스크립트 경로 자체도 검사 대상으로 추가
+      sources.push({ code: absoluteUrl, source: `external-script-url: ${src}` });
+
+      // background.js를 통해 외부 JS 파일 본문 다운로드 (CORS 우회)
+      if (absoluteUrl.startsWith('http://') || absoluteUrl.startsWith('https://')) {
+        // 일부 흔히 쓰이는 추적기나 거대한 라이브러리(GA 등)는 굳이 다운로드하지 않고 스킵하여 최적화
+        const lowerUrl = absoluteUrl.toLowerCase();
+        if (
+          lowerUrl.includes('google-analytics.com') ||
+          lowerUrl.includes('googletagmanager.com') ||
+          lowerUrl.includes('facebook.net') ||
+          lowerUrl.includes('doubleclick.net')
+        ) {
+          continue;
+        }
+
+        try {
+          const res = await new Promise((resolve) => {
+            chrome.runtime.sendMessage({ action: 'FETCH_EXTERNAL_SCRIPT', url: absoluteUrl }, (response) => {
+              resolve(response);
+            });
+          });
+
+          if (res && res.success && res.text) {
+            sources.push({ code: res.text, source: `external-script-body: ${src}` });
+          }
+        } catch (err) {
+          console.warn(`[WebVuln Scanner] 외부 스크립트 로드 실패 (${src}):`, err);
+        }
+      }
+    }
 
     // 인라인 이벤트 핸들러 값 수집
     const inlineEvents = [
@@ -1138,9 +1174,9 @@
   }
 
   // ─── 메인 분석 함수 ────────────────────────────
-  function runAnalysis() {
+  async function runAnalysis() {
     const results = [];
-    const scriptSources = collectScriptSources();
+    const scriptSources = await collectScriptSources();
     const pageUrl = location.href;
     const pageTitle = document.title;
     const isHTTPS = location.protocol === 'https:';
@@ -1220,14 +1256,15 @@
   // ─── 메시지 리스너 ────────────────────────────
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === 'START_SCAN') {
-      try {
-        const result = runAnalysis();
-        sendResponse({ success: true, data: result });
-      } catch (err) {
-        sendResponse({ success: false, error: err.message });
-      }
+      runAnalysis()
+        .then(result => {
+          sendResponse({ success: true, data: result });
+        })
+        .catch(err => {
+          sendResponse({ success: false, error: err.message });
+        });
+      return true; // 비동기 응답 유지
     }
-    return true;
   });
 
 })();

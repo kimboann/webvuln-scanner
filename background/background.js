@@ -5,8 +5,23 @@
  */
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  // 현재는 직접 통신 방식 사용 (popup → content script)
-  // 필요시 추가 백그라운드 로직 구현 가능
+  if (message.action === 'FETCH_EXTERNAL_SCRIPT') {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8초 타임아웃
+
+    fetch(message.url, { signal: controller.signal })
+      .then(res => {
+        clearTimeout(timeoutId);
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.text();
+      })
+      .then(text => sendResponse({ success: true, text }))
+      .catch(err => {
+        clearTimeout(timeoutId);
+        sendResponse({ success: false, error: err.message });
+      });
+    return true; // 비동기 응답 유지
+  }
   return false;
 });
 

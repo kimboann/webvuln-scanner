@@ -41,7 +41,7 @@ const KISA_MAPPING = {
   INSECURE_RANDOM: { code: '12. 취약한 비밀번호 복구 절차', name: 'Weak Password Recovery (Math.random)' },
 
   // 13. 프로세스 검증 누락
-  CORS_WILDCARD: { code: '13. 프로세스 검증 누락', name: 'Process Verification Bypass (CORS Wildcard)' },
+  // (CORS 와일드카드는 프로세스 호출 우회보다 불필요한 HTTP Method 악용에 적합하여 21번으로 매핑)
 
   // 15. 파일 다운로드
   SENSITIVE_IN_URL: { code: '15. 파일 다운로드', name: 'File Download (Sensitive Query Parameter)' },
@@ -59,10 +59,19 @@ const KISA_MAPPING = {
   // (서명되지 않은 JS 쿠키 변조 및 위조)
   COOKIE_JS_SET_SIGNCHECK: { code: '18. 쿠키 변조', name: 'Cookie Modification' },
 
+  // 19. 관리자 페이지 노출
+  INFO_DISCLOSURE_COMMENT: { code: '19. 관리자 페이지 노출', name: 'Administrator Page Exposure (Internal Path)' },
+
+  // 20. 자동화 공격
+  // (CSP 설정을 통한 비정상 스크립트 실행 통제)
+  MISSING_CSP: { code: '20. 자동화 공격', name: 'Automated Attacks (CSP Missing)' },
+  CSP_UNSAFE: { code: '20. 자동화 공격', name: 'Automated Attacks (CSP Unsafe)' },
+
+  // 21. 불필요한 Method 악용
+  CORS_WILDCARD: { code: '21. 불필요한 Method 악용', name: 'Arbitrary Method Abuse (CORS Wildcard)' },
+
   // 기타 웹 보안 표준 매핑 (CWE 연계)
   WEAK_CRYPTO: { code: 'WEB-STD', name: '취약한 암호 알고리즘 사용' },
-  MISSING_CSP: { code: 'WEB-STD', name: '콘텐츠 보안 정책(CSP) 누락' },
-  CSP_UNSAFE: { code: 'WEB-STD', name: '취약한 CSP 구성' },
   SRI_MISSING: { code: 'WEB-STD', name: '서브리소스 무결성(SRI) 누락' },
   IFRAME_NO_SANDBOX: { code: 'WEB-STD', name: 'Iframe 보안 설정 미흡' },
   IFRAME_OVERPERMISSIVE_SANDBOX: { code: 'WEB-STD', name: 'Iframe 보안 설정 미흡' },

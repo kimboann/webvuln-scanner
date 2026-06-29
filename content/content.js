@@ -13,7 +13,92 @@
     // ════════════════════════════════════════
     // XSS — DOM Sink
     // ════════════════════════════════════════
+    // ════════════════════════════════════════
+    // KISA Web Application Criteria Rules
+    // ════════════════════════════════════════
+    SQL_INJECTION_JS: {
+      id: 'SQL_INJECTION_JS',
+      name: '클라이언트 측 SQL 쿼리 조립',
+      severity: 'HIGH',
+      cwe: 'CWE-89',
+      category: 'SQL Injection',
+      type: 'js_pattern',
+      patterns: [
+        /["'`](?:SELECT|INSERT|UPDATE|DELETE)\s+.*FROM\s+.*["'`](?:\s*\+\s*|\s*\$\{)/gi,
+        /(?:query|sql)\s*=\s*["'`](?:SELECT|INSERT|UPDATE|DELETE)/gi,
+      ],
+      description: '클라이언트 자바스크립트 내에서 직접 SQL 쿼리 스트링을 파라미터와 병합 조립하는 구조는 SQL Injection 유출 위험을 내포합니다.',
+      recommendation: '모든 데이터베이스 접근 쿼리는 서버 단에서 처리하고, 클라이언트에서는 API 파라미터만 전달하세요.',
+    },
+    DIRECTORY_INDEXING_JS: {
+      id: 'DIRECTORY_INDEXING_JS',
+      name: '코드 내 백업/디렉터리 경로 노출',
+      severity: 'MEDIUM',
+      cwe: 'CWE-548',
+      category: 'Directory Indexing',
+      type: 'js_pattern',
+      patterns: [
+        /["'`][^"'`\s]+\.(?:zip|bak|tar|gz|rar|7z|backup|sql|env)["'`]/gi,
+        /["'`]\/(?:backup|download|uploads|temp|tmp|admin|setup)\/["'`]/gi,
+      ],
+      description: '소스코드 내 백업 압축 파일 명칭이나 인덱싱 가능한 임시 폴더의 경로가 하드코딩 형태로 노출되어 있습니다.',
+      recommendation: '소스코드 내 불필요한 백업 파일명 참조를 제거하고, 웹 서버 설정에서 디렉터리 브라우징(리스팅) 기능을 비활성화하세요.',
+    },
+    CSRF_PROTECTION_MISSING: {
+      id: 'CSRF_PROTECTION_MISSING',
+      name: 'CSRF 방어 설정 미흡 (토큰 누락)',
+      severity: 'MEDIUM',
+      cwe: 'CWE-352',
+      category: 'CSRF',
+      type: 'csrf_check',
+      description: '데이터를 서버로 전송하는 HTML form 요소 내에 CSRF 방어를 위한 hidden token 필드가 감지되지 않았습니다.',
+      recommendation: '모든 POST/PATCH/DELETE 전송 폼에 암호학적 일회성 CSRF Token 필드를 동적으로 로드하여 대조 검증을 수행하세요.',
+    },
+    SSRF_DANGEROUS_REQUEST: {
+      id: 'SSRF_DANGEROUS_REQUEST',
+      name: 'SSRF 유발 의심 요청 송신',
+      severity: 'HIGH',
+      cwe: 'CWE-918',
+      category: 'SSRF',
+      type: 'js_pattern',
+      patterns: [
+        /\b(?:fetch|axios|\$\.ajax|\$\.get|\$\.post)\s*\(\s*(?:location\.(?:hash|search)|URLSearchParams|document\.referrer)/gi,
+        /\b(?:fetch|axios|\$\.ajax)\s*\(\s*.*(?:url|path|dest|target|redirect)\s*\)/gi,
+      ],
+      description: '사용자 입력 값(hash, search, referrer 등) 또는 유동 변수가 주소 검증 없이 직접 HTTP 비동기 요청 API의 수신 인수로 주입되고 있습니다.',
+      recommendation: '클라이언트와 통신하는 API 요청 대상 호스트/도메인을 서버 단 화이트리스트로 엄격히 관리하여 제한하세요.',
+    },
+    WEAK_PASSWORD_REGEX: {
+      id: 'WEAK_PASSWORD_REGEX',
+      name: '약한 패스워드 정책 설정',
+      severity: 'MEDIUM',
+      cwe: 'CWE-521',
+      category: 'Weak Password',
+      type: 'js_pattern',
+      patterns: [
+        /\.test\s*\(\s*[^)]+\)\s*&&\s*[a-zA-Z_0-9-]+\.length\s*>\s*[1-6]/g,
+        /password.*\.length\s*>\s*[1-6]\b/gi,
+      ],
+      description: '클라이언트 측 패스워드 복잡성 검사 정규식 또는 조건문이 매우 취약하게(예: 길이 6자 이하의 단순 검증) 설정되어 있습니다.',
+      recommendation: '비밀번호 검증 시 영문 대소문자, 숫자, 특수문자 중 3종류 이상 혼합하여 8자리 이상 요구하도록 검증 로직을 고도화하세요.',
+    },
+    INSUFFICIENT_AUTHENTICATION_JS: {
+      id: 'INSUFFICIENT_AUTHENTICATION_JS',
+      name: '불충분한 클라이언트 인증 처리',
+      severity: 'HIGH',
+      cwe: 'CWE-287',
+      category: 'Insufficient Authentication',
+      type: 'js_pattern',
+      patterns: [
+        /(?:isAdmin|isLogged|isAuth|isAuthenticated|logged_in)\s*=\s*(?:true|1)/gi,
+        /(?:localStorage|sessionStorage)\.setItem\s*\(\s*["'`](?:isAdmin|role)["'`]/gi,
+      ],
+      description: '클라이언트 단 JavaScript 전역 변수나 로컬 스토리지 키 값을 조작하여 관리자 권한을 획득하거나 로그인 세션을 우회할 가능성이 있습니다.',
+      recommendation: '모든 인증 상태 및 접근 권한 정보는 서버 측 세션 객체를 기준으로 최종 판단 및 통제해야 합니다.',
+    },
+
     JS_INNER_HTML: {
+      id: 'JS_INNER_HTML',
       id: 'JS_INNER_HTML',
       name: 'innerHTML / outerHTML 사용',
       severity: 'HIGH',
@@ -1082,6 +1167,28 @@
     return findings;
   }
 
+  // ─── CSRF 토큰 누락 검사 ──────────────────────────
+  function checkCSRFToken() {
+    const findings = [];
+    const forms = document.querySelectorAll('form');
+    
+    forms.forEach(form => {
+      const method = (form.getAttribute('method') || 'get').toLowerCase();
+      // POST, PUT, DELETE 폼 데이터 전송만 검사
+      if (method === 'post' || method === 'put' || method === 'delete') {
+        const hasToken = form.querySelector('input[type="hidden"][name*="csrf" i], input[type="hidden"][name*="xsrf" i], input[type="hidden"][name*="token" i]');
+        if (!hasToken) {
+          findings.push({
+            source: 'DOM',
+            element: 'form',
+            snippet: `CSRF 방어 토큰이 누락된 POST 전송 폼 감지 (action: "${form.getAttribute('action') || ''}")`,
+          });
+        }
+      }
+    });
+    return findings;
+  }
+
   // ─── 인라인/외부 스크립트 소스 수집 ──────────────
   async function collectScriptSources() {
     const sources = [];
@@ -1210,6 +1317,9 @@
           break;
         case 'form_check':
           findings = checkFormSecurity();
+          break;
+        case 'csrf_check':
+          findings = checkCSRFToken();
           break;
         case 'dom_check':
           if (rule.checkType === 'iframe_sandbox') {
